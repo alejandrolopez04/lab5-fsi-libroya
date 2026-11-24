@@ -5,11 +5,13 @@ import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { useCart } from '../lib/cart';
+import { useToast } from '../lib/toast';
 import { type Book, money } from '../lib/format';
 
 export default function CatalogPage() {
   const { user } = useAuth();
   const { add, items } = useCart();
+  const { notify } = useToast();
   const [books, setBooks] = useState<Book[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [category, setCategory] = useState('');
@@ -101,7 +103,10 @@ export default function CatalogPage() {
                     <button
                       type="button"
                       disabled={soldOut || ebookInCart}
-                      onClick={() => add(book)}
+                      onClick={() => {
+                        add(book);
+                        notify('success', `«${book.title}» agregado al carrito`);
+                      }}
                       className="mt-2 rounded bg-stone-900 px-3 py-2 text-sm text-white disabled:opacity-50"
                     >
                       {ebookInCart ? 'En el carrito' : soldOut ? 'Agotado' : 'Agregar al carrito'}

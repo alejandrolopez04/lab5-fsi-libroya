@@ -6,12 +6,14 @@ import { useEffect, useState } from 'react';
 import { api } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth';
 import { useCart } from '../../../lib/cart';
+import { useToast } from '../../../lib/toast';
 import { type Book, money } from '../../../lib/format';
 
 export default function BookPage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const { add } = useCart();
+  const { notify } = useToast();
   const [book, setBook] = useState<Book | null>(null);
   const [error, setError] = useState('');
   const [added, setAdded] = useState(false);
@@ -46,6 +48,7 @@ export default function BookPage() {
             onClick={() => {
               add(book);
               setAdded(true);
+              notify('success', `«${book.title}» agregado al carrito`);
             }}
             className="rounded bg-stone-900 px-4 py-2 text-white disabled:opacity-50"
           >

@@ -6,6 +6,7 @@ import { api } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth';
 import { SHIPMENT_STATUS_LABEL } from '../../../lib/format';
 import { useSocketEvents } from '../../../lib/socket';
+import { useToast } from '../../../lib/toast';
 
 type Shipment = {
   _id: string;
@@ -33,7 +34,7 @@ function Board() {
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [tracking, setTracking] = useState<Record<string, string>>({});
   const [error, setError] = useState('');
-  const [live, setLive] = useState('');
+  const { notify } = useToast();
 
   const load = useCallback(() => {
     api<Shipment[]>('/api/admin/shipments').then(setShipments).catch((err: Error) => setError(err.message));
@@ -43,7 +44,7 @@ function Board() {
   useSocketEvents(
     {
       'shipment:created': () => {
-        setLive('Llegó un pedido nuevo');
+        notify('info', 'Llegó un pedido nuevo al tablero');
         load();
       },
       'shipment:statusChanged': load,
@@ -53,25 +54,25 @@ function Board() {
   );
 
   async function advance(shipment: Shipment, target: string) {
-    setError('');
     if (NEXT[shipment.status] !== target) {
-      setError('Solo puedes mover el envío a la siguiente columna.');
+      notify('error', 'Solo puedes mover el envío a la siguiente columna');
       return;
     }
     const body: Record<string, string> = { status: target };
     if (target === 'ENVIADO') {
       const guide = tracking[shipment._id]?.trim();
       if (!guide) {
-        setError('Escribe el número de guía antes de marcar como Enviado.');
+        notify('error', 'Escribe el número de guía antes de marcar como Enviado');
         return;
       }
       body.trackingNumber = guide;
     }
     try {
       await api(`/api/admin/shipments/${shipment._id}/status`, { method: 'PATCH', body: JSON.stringify(body) });
+      notify('success', `Envío movido a ${SHIPMENT_STATUS_LABEL[target]}`);
       load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo actualizar');
+      notify('error', err instanceof Error ? err.message : 'No se pudo actualizar');
     }
   }
 
@@ -85,7 +86,6 @@ function Board() {
     <section className="space-y-4">
       <h1 className="text-3xl font-semibold">Tablero de envíos</h1>
       <p className="text-sm text-stone-600">Arrastra una tarjeta a la siguiente columna o usa el botón. Se actualiza en tiempo real.</p>
-      {live && <p className="rounded border border-blue-300 bg-blue-50 px-3 py-2 text-sm text-blue-800">{live}</p>}
       {error && <p className="text-red-700">{error}</p>}
       <div className="grid gap-4 md:grid-cols-4">
         {COLUMNS.map((column) => (

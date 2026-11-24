@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useAuth } from '../lib/auth';
 import { useCart } from '../lib/cart';
+import { Logo } from './Logo';
 
 export function Header() {
   const { user, ready, logout } = useAuth();
@@ -11,8 +12,11 @@ export function Header() {
   return (
     <header className="border-b border-stone-300 bg-white">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4">
-        <Link href="/" className="text-xl font-semibold tracking-tight">
-          LibroYa
+        <Link href="/" className="flex items-center gap-2 text-xl font-semibold tracking-tight">
+          <Logo size={34} />
+          <span>
+            Libro<span className="text-amber-500">Ya</span>
+          </span>
         </Link>
         <nav className="flex flex-wrap items-center gap-4 text-sm">
           <Link href="/" className="hover:underline">

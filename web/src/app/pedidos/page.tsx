@@ -6,6 +6,7 @@ import { api, downloadFile } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import { money, ORDER_STATUS_LABEL, SHIPMENT_STATUS_LABEL } from '../../lib/format';
 import { useSocketEvents } from '../../lib/socket';
+import { useToast } from '../../lib/toast';
 
 type OrderItem = { bookId: string; title: string; format: 'EBOOK' | 'FISICO'; quantity: number; lineTotalCents: number };
 type Order = {
@@ -32,6 +33,7 @@ function Orders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const { notify } = useToast();
 
   useEffect(() => {
     const aviso = new URLSearchParams(window.location.search).get('aviso');
@@ -49,7 +51,7 @@ function Orders() {
   useSocketEvents(
     {
       'order:updated': () => {
-        setNotice('Tu pedido se actualizó en tiempo real.');
+        notify('info', 'Tu pedido se actualizó en tiempo real');
         load();
       },
       resync: load,
@@ -80,7 +82,7 @@ function Orders() {
   return (
     <section className="space-y-5">
       <h1 className="text-3xl font-semibold">Mis pedidos</h1>
-      {notice && <p className="rounded border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-800">{notice}</p>}
+      {notice && <p className="rounded-lg border-2 border-amber-400 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">{notice}</p>}
       {error && <p className="text-red-700">{error}</p>}
       {orders.length === 0 && <p className="text-stone-600">Aún no tienes pedidos.</p>}
       {orders.map((order) => {
