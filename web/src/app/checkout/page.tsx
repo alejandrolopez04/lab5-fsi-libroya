@@ -1,6 +1,7 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { RequireRole } from '../../components/RequireRole';
 import { api } from '../../lib/api';
 import { useCart } from '../../lib/cart';
@@ -27,6 +28,7 @@ export default function CheckoutPage() {
 }
 
 function Checkout() {
+  const router = useRouter();
   const { items, subtotalCents, clear } = useCart();
   const [address, setAddress] = useState(EMPTY_ADDRESS);
   const [error, setError] = useState('');
@@ -37,23 +39,32 @@ function Checkout() {
     event.preventDefault();
     setError('');
     setPending(true);
+    let order: Order;
     try {
-      const order = await api<Order>('/api/orders', {
+      // Si la validación falla aquí, el servidor no guarda ningún pedido.
+      order = await api<Order>('/api/orders', {
         method: 'POST',
         body: JSON.stringify({
           items: items.map((item) => ({ bookId: item.bookId, quantity: item.quantity })),
           address: needsAddress ? address : undefined,
         }),
       });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo crear el pedido');
+      setPending(false);
+      return;
+    }
+    // El pedido ya existe: se vacía el carrito para que un reintento no cree otro pedido.
+    clear();
+    try {
       const payment = await api<{ approveUrl: string }>('/api/payments/paypal/order', {
         method: 'POST',
         body: JSON.stringify({ orderId: order._id }),
       });
-      clear();
       window.location.href = payment.approveUrl;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo iniciar el pago');
-      setPending(false);
+      const reason = err instanceof Error ? err.message : 'No se pudo iniciar el pago';
+      router.push(`/pedidos?aviso=${encodeURIComponent(`${reason}. Tu pedido quedó pendiente de pago; puedes pagarlo desde aquí.`)}`);
     }
   }
 

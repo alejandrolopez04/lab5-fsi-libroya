@@ -47,7 +47,12 @@ describe('catálogo, stock y pedidos', () => {
     expect((await send({ items: [{ bookId: String(physical._id), quantity: 4 }], address: ADDRESS })).status).toBe(409);
     expect((await send({ items: [{ bookId: String(physical._id), quantity: 1 }] })).status).toBe(400);
     expect((await send({ items: [{ bookId: String(ebook._id), quantity: 2 }] })).status).toBe(400);
+    const blankAddress = { ...ADDRESS, line1: '   ', city: '   ' };
+    expect((await send({ items: [{ bookId: String(physical._id), quantity: 1 }], address: blankAddress })).status).toBe(400);
+    // Ninguna validación fallida dejó pedidos guardados.
+    expect(await Order.countDocuments()).toBe(0);
     expect((await send({ items: [{ bookId: String(ebook._id), quantity: 1 }] })).status).toBe(201);
+    expect(await Order.countDocuments()).toBe(1);
   });
 
   it('exige sesión para crear pedidos', async () => {

@@ -30,7 +30,11 @@ async function getAccessToken(): Promise<string> {
     headers: { Authorization: `Basic ${credentials}`, 'Content-Type': 'application/x-www-form-urlencoded' },
     body: 'grant_type=client_credentials',
   }).catch(() => null);
-  if (!response?.ok) throw new AppError(502, 'PayPal no está disponible en este momento');
+  if (!response?.ok) {
+    // Solo se registra el código HTTP: 401 = credenciales o entorno (Sandbox/Live) incorrectos.
+    console.warn(`PayPal OAuth falló: ${response ? `HTTP ${response.status}` : 'sin respuesta de red'}`);
+    throw new AppError(502, 'PayPal no está disponible en este momento');
+  }
   const data = (await response.json()) as { access_token: string };
   return data.access_token;
 }
@@ -81,7 +85,10 @@ export async function createPaypalOrder(input: {
     },
   );
   const approveUrl = result.data.links?.find((link) => link.rel === 'approve' || link.rel === 'payer-action')?.href;
-  if (!result.ok || !result.data.id || !approveUrl) throw new AppError(502, 'No se pudo crear la orden en PayPal');
+  if (!result.ok || !result.data.id || !approveUrl) {
+    console.warn(`PayPal no creó la orden: HTTP ${result.status}`);
+    throw new AppError(502, 'No se pudo crear la orden en PayPal');
+  }
   return { id: result.data.id, approveUrl };
 }
 

@@ -33,6 +33,11 @@ function Orders() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
 
+  useEffect(() => {
+    const aviso = new URLSearchParams(window.location.search).get('aviso');
+    if (aviso) setNotice(aviso);
+  }, []);
+
   const load = useCallback(() => {
     api<Order[]>('/api/orders/me')
       .then(setOrders)
